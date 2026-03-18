@@ -20,7 +20,7 @@ sudo apt-get install -y gcc libxxf86vm-dev libgl-dev libxcursor-dev libxrandr-de
 
 ```bash
 go mod tidy
-go build -o golang-encdec .
+go build -ldflags="-s -w" -o golang-encdec .
 ```
 
 ### 3. 실행
@@ -40,7 +40,19 @@ sudo apt-get install -y gcc-mingw-w64-x86-64
 ### 2. 빌드
 
 ```bash
-CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 go build -o golang-encdec.exe .
+CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 \
+  go build -ldflags="-s -w" -o golang-encdec.exe .
+```
+
+## 바이너리 크기 줄이기
+
+`-ldflags="-s -w"`로 디버그 정보를 제거하면 약 30~40% 감소합니다 (위 빌드 명령에 이미 포함).
+
+UPX를 사용하면 추가로 50~60% 더 줄일 수 있습니다:
+
+```bash
+sudo apt-get install -y upx
+upx --best golang-encdec.exe
 ```
 
 ## 사용법
