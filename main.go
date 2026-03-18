@@ -1,12 +1,10 @@
 package main
 
 import (
-	"image/color"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
@@ -27,39 +25,47 @@ func main() {
 	inputEntry.SetPlaceHolder("암호화할 문장을 입력하세요")
 	inputEntry.SetMinRowsVisible(3)
 
-	// 결과 영역: 성공 시 복사 가능한 Entry, 실패 시 빨간 글씨 Text
+	// 결과: 복사 가능한 Entry (비활성화하지 않아 검정색 유지)
 	resultEntry := widget.NewMultiLineEntry()
 	resultEntry.SetMinRowsVisible(2)
-	resultEntry.Disable()
 
-	errorText := canvas.NewText("", color.RGBA{R: 220, G: 30, B: 30, A: 255})
-	errorText.TextSize = 14
-	errorText.Hide()
+	// 에러: RichText로 빨간 글씨 (한글 깨짐 없음)
+	errorLabel := widget.NewRichTextWithText("")
+	errorLabel.Hide()
 
-	resultContainer := container.NewStack(resultEntry, errorText)
+	resultContainer := container.NewStack(resultEntry, errorLabel)
 
 	showResult := func(text string) {
-		errorText.Hide()
-		resultEntry.Enable()
+		errorLabel.Hide()
 		resultEntry.SetText(text)
-		resultEntry.Disable()
 		resultEntry.Show()
 	}
 
 	showError := func(text string) {
 		resultEntry.SetText("")
 		resultEntry.Hide()
-		errorText.Text = text
-		errorText.Color = color.RGBA{R: 220, G: 30, B: 30, A: 255}
-		errorText.Show()
-		errorText.Refresh()
+		errorLabel.Segments = []widget.RichTextSegment{
+			&widget.TextSegment{
+				Text: text,
+				Style: widget.RichTextStyle{
+					ColorName: "",
+					TextStyle: fyne.TextStyle{Bold: true},
+				},
+			},
+		}
+		// 빨간색 직접 지정
+		errorLabel.Segments[0].(*widget.TextSegment).Style.ColorName = "error"
+		errorLabel.Show()
+		errorLabel.Refresh()
 	}
 
 	clearResult := func() {
 		resultEntry.SetText("")
 		resultEntry.Show()
-		errorText.Hide()
+		errorLabel.Hide()
 	}
+
+	_ = showError // suppress unused warning during build
 
 	radio := widget.NewRadioGroup([]string{"암호화", "복호화"}, func(selected string) {
 		modeEncrypt = selected == "암호화"
