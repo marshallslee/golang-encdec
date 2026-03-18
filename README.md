@@ -41,7 +41,7 @@ sudo apt-get install -y gcc-mingw-w64-x86-64
 
 ```bash
 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 \
-  go build -ldflags="-s -w" -o golang-encdec.exe .
+  go build -ldflags="-s -w -H windowsgui" -o golang-encdec.exe .
 ```
 
 ## 바이너리 크기 줄이기
