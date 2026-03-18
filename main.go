@@ -2,11 +2,13 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -25,36 +27,64 @@ func main() {
 	inputEntry.SetPlaceHolder("암호화할 문장을 입력하세요")
 	inputEntry.SetMinRowsVisible(3)
 
-	// 결과: 복사 가능한 Entry (비활성화하지 않아 검정색 유지)
+	// 결과: 복사 가능한 Entry (검정색 유지)
 	resultEntry := widget.NewMultiLineEntry()
 	resultEntry.SetMinRowsVisible(2)
 
-	// 에러: RichText로 빨간 글씨 (한글 깨짐 없음)
+	// 복사 버튼 + 토스트
+	toastLabel := widget.NewRichTextWithText("")
+	toastLabel.Hide()
+
+	copyBtn := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+		a.Clipboard().SetContent(resultEntry.Text)
+		toastLabel.Segments = []widget.RichTextSegment{
+			&widget.TextSegment{
+				Text:  "값이 복사되었습니다",
+				Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true}},
+			},
+		}
+		toastLabel.Show()
+		toastLabel.Refresh()
+		go func() {
+			time.Sleep(2 * time.Second)
+			toastLabel.Hide()
+			toastLabel.Refresh()
+		}()
+	})
+	copyBtn.Hide()
+
+	resultRow := container.NewBorder(nil, nil, nil, copyBtn, resultEntry)
+
+	// 에러: RichText로 빨간 글씨
 	errorLabel := widget.NewRichTextWithText("")
 	errorLabel.Hide()
 
-	resultContainer := container.NewStack(resultEntry, errorLabel)
+	resultContainer := container.NewVBox(
+		container.NewStack(resultRow, errorLabel),
+		toastLabel,
+	)
 
 	showResult := func(text string) {
 		errorLabel.Hide()
 		resultEntry.SetText(text)
 		resultEntry.Show()
+		copyBtn.Show()
 	}
 
 	showError := func(text string) {
 		resultEntry.SetText("")
 		resultEntry.Hide()
+		copyBtn.Hide()
+		toastLabel.Hide()
 		errorLabel.Segments = []widget.RichTextSegment{
 			&widget.TextSegment{
 				Text: text,
 				Style: widget.RichTextStyle{
-					ColorName: "",
+					ColorName: "error",
 					TextStyle: fyne.TextStyle{Bold: true},
 				},
 			},
 		}
-		// 빨간색 직접 지정
-		errorLabel.Segments[0].(*widget.TextSegment).Style.ColorName = "error"
 		errorLabel.Show()
 		errorLabel.Refresh()
 	}
@@ -62,10 +92,10 @@ func main() {
 	clearResult := func() {
 		resultEntry.SetText("")
 		resultEntry.Show()
+		copyBtn.Hide()
+		toastLabel.Hide()
 		errorLabel.Hide()
 	}
-
-	_ = showError // suppress unused warning during build
 
 	radio := widget.NewRadioGroup([]string{"암호화", "복호화"}, func(selected string) {
 		modeEncrypt = selected == "암호화"
